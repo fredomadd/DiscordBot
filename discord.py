@@ -24,7 +24,7 @@ def iterateList(pJson):
 
     # Add message ID's that were sent from the main user
     while n < len(pJson):
-        if pJson[n]['author']['username'] == 'suni':
+        if pJson[n]['author']['username'] == user:
             messagesIDArray.append(pJson[n]['id'])
         n+=1
     deleteMessages(messagesIDArray)
@@ -58,6 +58,7 @@ def declareHeaders(usr, pw, convid, msgamount):
 if __name__ == '__main__':
     email = input('Email: ')
     password = input('\nPassword: ')
+    user = input('\nUsername: ')
     memberid = input('\nConversation ID: ')
     messagesTodelete = int(input('\nMessages to delete: '))
 

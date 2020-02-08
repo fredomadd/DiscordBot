@@ -39,8 +39,8 @@ def loginRequest(headers, postdata, id, limit):
     token = loginrequest.text.split('"')[3]
 
     print("\nParsing Messages...")
-    # Make a request to receive list of messages with desired amount of messages displayed
-
+    
+    # Makes a request to receive list of messages with desired amount of messages displayed
     messagesRequest = requests.get(url="https://discordapp.com/api/v6/channels/%s/messages?limit=%d" % (id, limit*2) , headers={'Authorization': token})
     parsed_json = json.loads(messagesRequest.text)
     iterateList(parsed_json)

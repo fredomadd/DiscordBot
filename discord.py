@@ -10,8 +10,8 @@ def deleteMessages(ids):
         deleteMessagesRequest = requests.delete(url='https://discordapp.com/api/v6/channels/' + memberid + '/messages/' + id, headers={'Authorization': token})
         sleep(0.5)
     print("\nDone!")
-    print("\nDo you want to do it again?")
-    if input("1. Yes\n2. No\n\n> ") == "1":
+    print("\nDo you want to do it again?\n\nEnter 1 or 2")
+    if input("\n1. Yes\n2. No\n\n> ") == "1":
         member = input('\nConversation ID: ')
         messages = int(input('\nMessages to delete: '))
         declareHeaders(email, password, member, messages)

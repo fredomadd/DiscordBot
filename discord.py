@@ -5,7 +5,7 @@ from time import sleep
 loginrequst = requests.Session()
 
 def deleteMessages(ids):
-    print(len(ids))
+    print("\n" + str(len(ids)) + " Messages found\n")
     n = 0
     for id in ids:
         n+=1

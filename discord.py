@@ -5,8 +5,11 @@ from time import sleep
 loginrequst = requests.Session()
 
 def deleteMessages(ids):
-    print("\nDeleting Messages...")
+    print(len(ids))
+    n = 0
     for id in ids:
+        n+=1
+        print("Deleting Messages(" + str(n) + "/" + str(len(ids)) + ")")
         deleteMessagesRequest = requests.delete(url='https://discordapp.com/api/v6/channels/' + memberid + '/messages/' + id, headers={'Authorization': token})
         sleep(0.5)
     print("\nDone!")
@@ -39,7 +42,7 @@ def loginRequest(headers, postdata, id, limit):
     token = loginrequest.text.split('"')[3]
 
     print("\nParsing Messages...")
-    
+
     # Makes a request to receive list of messages with desired amount of messages displayed
     messagesRequest = requests.get(url="https://discordapp.com/api/v6/channels/%s/messages?limit=%d" % (id, limit*2) , headers={'Authorization': token})
     parsed_json = json.loads(messagesRequest.text)

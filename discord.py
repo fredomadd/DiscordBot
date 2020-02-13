@@ -2,67 +2,117 @@ import requests
 import json
 from time import sleep
 
-loginrequst = requests.Session()
+loginrequest = requests.Session()
 
 def deleteMessages(ids):
-    print("\n" + str(len(ids)) + " Messages found\n")
     n = 0
     for id in ids:
         n+=1
-        print("Deleting Messages(" + str(n) + "/" + str(len(ids)) + ")")
-        deleteMessagesRequest = requests.delete(url='https://discordapp.com/api/v6/channels/' + memberid + '/messages/' + id, headers={'Authorization': token})
-        sleep(0.5)
-    print("\nDone!")
-    print("\nDo you want to do it again?\n\nEnter 1 or 2")
+        print("Deleting Messages (" + str(n) + "/" + str(len(ids)) + ")")
+        deleteMessagesRequest = requests.delete(url='https://discordapp.com/api/v6/channels/' + userid + '/messages/' + id, headers={'Authorization': token})
+        sleep(0.005)
+    print("Done!")
+    print("\nDo you want to do it again?\nEnter 1 or 2")
     if input("\n1. Yes\n2. No\n\n> ") == "1":
-        member = input('\nConversation ID: ')
-        messages = int(input('\nMessages to delete: '))
-        declareHeaders(email, password, member, messages)
+        frienduser = input('\nFriend Username (Name only!): ')
+        messagesTodelete = int(input('\nMessages to delete: '))
+        beginning()
     else:
         pass
 
-def iterateList(pJson):
-    messagesIDArray = []
-    n = 0
+def parseMessages(msgamount):
+    print("Parsing Messages...")
+    global ids, messages, friendids, friendmessages
+    ids = []
+    messages = []
+    friendids = []
+    friendmessages = []
 
-    # Add message ID's that were sent from the main user
-    while n < len(pJson):
-        if pJson[n]['author']['username'] == user:
-            messagesIDArray.append(pJson[n]['id'])
-        n+=1
-    deleteMessages(messagesIDArray)
+    firstHundred = requests.get(url="https://discordapp.com/api/v6/channels/" + userid + "/messages?limit=100", headers={'Authorization': token})
+    index = json.loads(firstHundred.text)[-1]['id']
 
-def loginRequest(headers, postdata, id, limit):
+    # Add the ID's of the first hundred
+    for fids in json.loads(firstHundred.text):
+        if fids['author']['username'] == ownuser and len(ids) <= msgamount:
+            ids.append(fids['id'])
+            messages.append(fids['content'])
+
+    # Whole thing is to parse all the messages using a function that is running recursively
+    def parseOldMessages():
+        request = requests.get(url="https://discordapp.com/api/v6/channels/" + userid + "/messages?before=" + index + "&limit=100", headers={'Authorization': token})
+        lastindex= json.loads(request.text)[-1]['id']
+        requestdata = json.loads(request.text)
+        return requestdata, lastindex
+
+    try:
+        while len(ids) <= msgamount:
+            f1 = parseOldMessages()
+            data = f1[0]
+            index = f1[1]
+            for idd in data:
+                if idd['author']['username'] == ownuser and len(ids) < msgamount:
+                    ids.append(idd['id'])
+                    messages.append(idd['content'])
+                elif idd['author']['username'].lower() == frienduser:
+                    friendids.append(idd['id'])
+                    friendmessages.append(idd['content'])
+    except IndexError:
+        deleteMessages(ids)
+
+def parseUsers(targetuser, msgamount):
+    # Parse own username and target's user id
+    global userid, ownuser, ownuserid
+    print("Parsing usernames...")
+
+    # Getting our username
+    reqs = requests.get("https://discordapp.com/api/v6/users/@me", headers={'Authorization': token})
+
+    ownuser = json.loads(reqs.text)['username']
+    ownuserid = json.loads(reqs.text)['id']
+
+    # Getting Target's user ID
+    reqs = requests.get(url="https://discordapp.com/api/v6/users/@me/channels", headers={'Authorization': token})
+    parsed_json = json.loads(reqs.text)
+
+    try:
+        n = 0
+        while parsed_json[n]['recipients'][0]['username'].lower() != targetuser.lower():
+            n = n + 1
+        userid = parsed_json[n]['id']
+    except IndexError:
+        print("User not found")
+    parseMessages(msgamount)
+
+def loginrequest():
     global token
     print("\nLogging in...")
-    # Main Login Request
-    loginrequest = requests.post(url="https://discordapp.com/api/v6/auth/login", data=postdata, headers=headers)
-
-    # Gets the token from the Login request's response
-    token = loginrequest.text.split('"')[3]
-
-    print("\nParsing Messages...")
-
-    # Makes a request to receive list of messages with desired amount of messages displayed
-    messagesRequest = requests.get(url="https://discordapp.com/api/v6/channels/%s/messages?limit=%d" % (id, limit*2) , headers={'Authorization': token})
-    parsed_json = json.loads(messagesRequest.text)
-    iterateList(parsed_json)
-
-def declareHeaders(usr, pw, convid, msgamount):
     loginheaders = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0",
         "Accept": "*/*",
         "Content-Type": "application/json",
         "Origin": "https://discordapp.com"}
 
-    logindata = '{"email":"%s","password":"%s","undelete":false,"captcha_key":null,"login_source":null,"gift_code_sku_id":null}' % (usr, pw)
-    loginRequest(loginheaders, logindata, memberid, msgamount)
+    logindata = '{"email":"%s","password":"%s","undelete":false,"captcha_key":null,"login_source":null,"gift_code_sku_id":null}' % (email, password)
+    loginrequest = requests.post(url="https://discordapp.com/api/v6/auth/login", data=logindata, headers=loginheaders)
+
+    if 'Password does not match.' in loginrequest.text:
+        print("Password is incorrect.")
+    elif 'mfa": true' in loginrequest.text:
+        print("Can't login through 2FA, sorry.")
+    else:
+        token = loginrequest.text.split('"')[3]
+        parseUsers(frienduser, messagesTodelete)
+
+def beginning():
+    global frienduser, messagesTodelete
+    frienduser = input('Friend Username (Name only!): ')
+    messagesTodelete = int(input('Messages to delete (Type \'0\' if you want to delete all): '))
+    if messagesTodelete == 0:
+        messagesTodelete = 100000
+
+    loginrequest()
 
 if __name__ == '__main__':
     email = input('Email: ')
-    password = input('\nPassword: ')
-    user = input('\nUsername: ')
-    memberid = input('\nConversation ID: ')
-    messagesTodelete = int(input('\nMessages to delete: '))
-
-    declareHeaders(email, password, memberid, messagesTodelete)
+    password = input('Password: ')
+    beginning()

@@ -9,8 +9,7 @@ def deleteMessages(ids):
     for id in ids:
         n+=1
         print("Deleting Messages (" + str(n) + "/" + str(len(ids)) + ")")
-        deleteMessagesRequest = requests.delete(url='https://discordapp.com/api/v6/channels/' + userid + '/messages/' + id, headers={'Authorization': token})
-        sleep(0.005)
+        delreqs = requests.delete(url='https://discordapp.com/api/v6/channels/' + userid + '/messages/' + id, headers={'Authorization': token})
     print("Done!")
     print("\nDo you want to do it again?\nEnter 1 or 2")
     if input("\n1. Yes\n2. No\n\n> ") == "1":
@@ -54,6 +53,7 @@ def parseMessages(msgamount):
                 elif idd['author']['username'].lower() == frienduser:
                     friendids.append(idd['id'])
                     friendmessages.append(idd['content'])
+        deleteMessages(ids)
     except IndexError:
         deleteMessages(ids)
 
